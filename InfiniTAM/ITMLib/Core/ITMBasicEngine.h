@@ -23,7 +23,7 @@ namespace ITMLib
 
 		bool trackingActive, fusionActive, mainProcessingActive, trackingInitialised;
 		int framesProcessed, relocalisationCount;
-
+//      lowLevelEngine默认由ITMLowLevelEngine_CUDA实例化
 		ITMLowLevelEngine *lowLevelEngine;
 		ITMVisualisationEngine<TVoxel, TIndex> *visualisationEngine;
 
