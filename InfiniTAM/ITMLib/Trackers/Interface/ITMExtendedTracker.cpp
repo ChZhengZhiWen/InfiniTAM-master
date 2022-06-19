@@ -202,6 +202,7 @@ void ITMExtendedTracker::SetEvaluationData(ITMTrackingState *trackingState, cons
 
 void ITMExtendedTracker::PrepareForEvaluation()
 {
+    //    4 noLevels
 	// Create depth pyramid
 	for (int i = 1; i < viewHierarchy_Depth->GetNoLevels(); i++)
 	{
@@ -249,6 +250,7 @@ void ITMExtendedTracker::PrepareForEvaluation()
 		}
 	}
 
+//    4 noLevels
 	// Create raycasted pyramid
 	if (useDepth)
 	{

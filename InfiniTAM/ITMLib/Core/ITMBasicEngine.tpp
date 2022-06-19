@@ -46,7 +46,7 @@ ITMBasicEngine<TVoxel,TIndex>::ITMBasicEngine(const ITMLibSettings *settings, co
 
 	imuCalibrator = new ITMIMUCalibrator_iPad();
 
-//没太搞懂   大概根据信息生成来ICP跟踪器
+//根据信息生成来ICP跟踪器
 	tracker = ITMTrackerFactory::Instance().Make(imgSize_rgb, imgSize_d, settings, lowLevelEngine, imuCalibrator, scene->sceneParams);
 	trackingController = new ITMTrackingController(tracker, settings);
 
