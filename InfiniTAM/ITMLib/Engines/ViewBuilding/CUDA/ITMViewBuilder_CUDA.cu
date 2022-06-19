@@ -117,8 +117,6 @@ void ITMViewBuilder_CUDA::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImag
 void ITMViewBuilder_CUDA::ConvertDisparityToDepth(ITMFloatImage *depth_out, const ITMShortImage *depth_in, const ITMIntrinsics *depthIntrinsics,
 	Vector2f disparityCalibParams)
 {
-    printf("ITMViewBuilder_CUDA_120_%f\n",disparityCalibParams.x);
-    printf("%f\n",disparityCalibParams.y);
 	Vector2i imgSize = depth_in->noDims;
 
 	const short *d_in = depth_in->GetData(MEMORYDEVICE_CUDA);

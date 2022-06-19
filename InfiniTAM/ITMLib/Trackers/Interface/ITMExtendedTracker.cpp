@@ -165,11 +165,15 @@ void ITMExtendedTracker::SetEvaluationData(ITMTrackingState *trackingState, cons
 	// 		 - sceneHierarchy allows pointers to external data at level 0
 
 	// Depth image hierarchy is always used
+//  将相机内参赋值给深度层级视图
 	viewHierarchy_Depth->GetLevel(0)->intrinsics = view->calib.intrinsics_d.projectionParamsSimple.all;
+//  将深度图像赋值给深度层级视图
 	viewHierarchy_Depth->GetLevel(0)->depth = view->depth;
 
+//  Default useColour=false
 	if (useColour)
 	{
+        printf("ITMExtendedTracker.cpp-175-useColour\n");
 		viewHierarchy_Intensity->GetLevel(0)->intrinsics = view->calib.intrinsics_rgb.projectionParamsSimple.all;
 
 		// Convert RGB to intensity
@@ -184,7 +188,9 @@ void ITMExtendedTracker::SetEvaluationData(ITMTrackingState *trackingState, cons
 	// Pointclouds are needed only when the depth tracker is enabled
 	if (useDepth)
 	{
+        printf("ITMExtendedTracker.cpp-190-useDepth\n");
 		sceneHierarchy->GetLevel(0)->intrinsics = view->calib.intrinsics_d.projectionParamsSimple.all;
+//      trackingState->pointCloud在ITMPointCloud.h的explicit ITMPointCloud中初始化
 		sceneHierarchy->GetLevel(0)->pointsMap = trackingState->pointCloud->locations;
 		sceneHierarchy->GetLevel(0)->normalsMap = trackingState->pointCloud->colours;
 	}
@@ -410,6 +416,7 @@ void ITMExtendedTracker::UpdatePoseQuality(int noValidPoints_old, float *hessian
 
 void ITMExtendedTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView *view)
 {
+    printf("ITMExtendedTracker\n");
 	if (!trackingState->HasValidPointCloud()) return;
 
 	if (trackingState->age_pointCloud >= 0) trackingState->framesProcessed++;

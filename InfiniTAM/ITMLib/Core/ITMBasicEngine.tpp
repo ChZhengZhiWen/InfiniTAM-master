@@ -46,7 +46,7 @@ ITMBasicEngine<TVoxel,TIndex>::ITMBasicEngine(const ITMLibSettings *settings, co
 
 	imuCalibrator = new ITMIMUCalibrator_iPad();
 
-//没太搞懂
+//没太搞懂   大概根据信息生成来ICP跟踪器
 	tracker = ITMTrackerFactory::Instance().Make(imgSize_rgb, imgSize_d, settings, lowLevelEngine, imuCalibrator, scene->sceneParams);
 	trackingController = new ITMTrackingController(tracker, settings);
 
@@ -265,6 +265,8 @@ ITMTrackingState::TrackingResult ITMBasicEngine<TVoxel,TIndex>::ProcessFrame(ITM
 
 	// tracking
 	ORUtils::SE3Pose oldPose(*(trackingState->pose_d));
+//  trackingController在51行初始化
+//  trackingController中的ITMTracker *tracker成员变量由ITMExtendedTracker实例化
 	if (trackingActive) trackingController->Track(trackingState, view);
 
 	ITMTrackingState::TrackingResult trackerResult = ITMTrackingState::TRACKING_GOOD;
