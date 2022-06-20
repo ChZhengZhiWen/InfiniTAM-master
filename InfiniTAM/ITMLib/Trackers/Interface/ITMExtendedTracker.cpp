@@ -8,7 +8,7 @@
 #include "../../../ORUtils/Cholesky.h"
 
 #include "../../../ORUtils/FileUtils.h"
-
+#include <iostream>
 #include <math.h>
 #include <limits>
 
@@ -16,7 +16,7 @@ using namespace ITMLib;
 
 const int ITMExtendedTracker::MIN_VALID_POINTS_DEPTH = 100;
 const int ITMExtendedTracker::MIN_VALID_POINTS_RGB = 100;
-
+///在ITMTrackerFactory.h中初始化
 ITMExtendedTracker::ITMExtendedTracker(Vector2i imgSize_d,
 									   Vector2i imgSize_rgb,
 									   bool useDepth,
@@ -446,12 +446,21 @@ void ITMExtendedTracker::TrackCamera(ITMTrackingState *trackingState, const ITMV
 
 		if (currentIterationType == TRACKER_ITERATION_NONE) continue;
 
+//      深度图位姿的逆
 		Matrix4f approxInvPose = trackingState->pose_d->GetInvM();
+//      深度图位姿
 		ORUtils::SE3Pose lastKnownGoodPose(*(trackingState->pose_d));
-
+//      返回当前操作系统环境数据类型float的最大值
 		float f_old = std::numeric_limits<float>::max();
 		float lambda = 1.0;
 
+std::cout<<"----"<<std::endl;
+for (int i = 0; i <=3; ++i) {
+    std::cout<<noIterationsPerLevel[i]<<" ";
+}
+std::cout<<std::endl<<"----";
+
+//      noIterationsPerLevel=[50,40,30,20]
 		for (int iterNo = 0; iterNo < noIterationsPerLevel[levelId]; iterNo++)
 		{
 			float hessian_depth[6 * 6], hessian_RGB[6 * 6];
@@ -465,6 +474,7 @@ void ITMExtendedTracker::TrackCamera(ITMTrackingState *trackingState, const ITMV
 
 			memset(nabla_depth, 0, sizeof(nabla_depth));
 			memset(nabla_RGB, 0, sizeof(nabla_RGB));
+
 
 			// evaluate error function and gradients
 			if (useDepth)
