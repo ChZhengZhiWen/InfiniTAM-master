@@ -454,11 +454,11 @@ void ITMExtendedTracker::TrackCamera(ITMTrackingState *trackingState, const ITMV
 		float f_old = std::numeric_limits<float>::max();
 		float lambda = 1.0;
 
-std::cout<<"----"<<std::endl;
-for (int i = 0; i <=3; ++i) {
-    std::cout<<noIterationsPerLevel[i]<<" ";
-}
-std::cout<<std::endl<<"----";
+//std::cout<<"----"<<std::endl;
+//for (int i = 0; i <=3; ++i) {
+//    std::cout<<noIterationsPerLevel[i]<<" ";
+//}
+//std::cout<<std::endl<<"----"<<std::endl;
 
 //      noIterationsPerLevel=[50,40,30,20]
 		for (int iterNo = 0; iterNo < noIterationsPerLevel[levelId]; iterNo++)

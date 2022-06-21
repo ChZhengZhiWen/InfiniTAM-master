@@ -110,11 +110,13 @@ int ITMExtendedTracker_CUDA::ComputeGandH_Depth(float &f, float *nabla, float *h
 
 	if (currentIterationType == TRACKER_ITERATION_NONE) return 0;
 
+//	如果跟踪迭代器为none则直接返回，如果是旋转或者平移类型的话维度为3，否则为6
 	bool shortIteration = currentIterationType == TRACKER_ITERATION_ROTATION
 						  || currentIterationType == TRACKER_ITERATION_TRANSLATION;
 
 	int noPara = shortIteration ? 3 : 6;
 
+///	<<<grid_size, block_size, 0, stream>>> 是 CUDA 对 C++ 的扩展
 	dim3 blockSize(16, 16);
 	dim3 gridSize((int)ceil((float)viewImageSize.x / (float)blockSize.x), (int)ceil((float)viewImageSize.y / (float)blockSize.y));
 

@@ -27,7 +27,7 @@ ITMLibSettings::ITMLibSettings(void)
 #endif
 #endif
 
-	//deviceType = DEVICE_CPU;
+	deviceType = DEVICE_CPU;
 
 	/// how swapping works: disabled, fully enabled (still with dragons) and delete what's not visible - not supported in loop closure version
 	swappingMode = SWAPPINGMODE_DISABLED;
