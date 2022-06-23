@@ -73,45 +73,52 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_exDepth_Ab(THREADPTR(float) *A,
 {
 	depthWeight = 0;
 
+    //一般深度图缺失的点，都会设为深度0
 	if (depth <= 1e-8f) return false; //check if valid -- != 0.0f
 
 	Vector4f tmp3Dpoint, tmp3Dpoint_reproj; Vector3f ptDiff;
 	Vector4f curr3Dpoint, corr3Dnormal; Vector2f tmp2Dpoint;
 
+    //将深度图像素坐标按内参映射为相机坐标系下的三维坐标
 	tmp3Dpoint.x = depth * ((float(x) - viewIntrinsics.z) / viewIntrinsics.x);
 	tmp3Dpoint.y = depth * ((float(y) - viewIntrinsics.w) / viewIntrinsics.y);
 	tmp3Dpoint.z = depth;
 	tmp3Dpoint.w = 1.0f;
 
 	// transform to previous frame coordinates
+    //按上次计算的位姿，将相机坐标系转换到上个位姿的视角
 	tmp3Dpoint = approxInvPose * tmp3Dpoint;
 	tmp3Dpoint.w = 1.0f;
 
 	// project into previous rendered image
+//  scenePose是生成点云位姿，这里将相机坐标转换到模型坐标系
 	tmp3Dpoint_reproj = scenePose * tmp3Dpoint;
 	if (tmp3Dpoint_reproj.z <= 0.0f) return false;
+//  将模型的3d坐标投影到模型坐标系下的像素坐标
 	tmp2Dpoint.x = sceneIntrinsics.x * tmp3Dpoint_reproj.x / tmp3Dpoint_reproj.z + sceneIntrinsics.z;
 	tmp2Dpoint.y = sceneIntrinsics.y * tmp3Dpoint_reproj.y / tmp3Dpoint_reproj.z + sceneIntrinsics.w;
 
+//  确保投影的像素不越界
 	if (!((tmp2Dpoint.x >= 0.0f) && (tmp2Dpoint.x <= sceneImageSize.x - 2) && (tmp2Dpoint.y >= 0.0f) && (tmp2Dpoint.y <= sceneImageSize.y - 2)))
 		return false;
-
+//  双线性插值法，不太懂这是在干嘛？？？？？？？？？？？？？？？
 	curr3Dpoint = interpolateBilinear_withHoles(pointsMap, tmp2Dpoint, sceneImageSize);
 	if (curr3Dpoint.w < 0.0f) return false;
-
+//  对应的模型点到当前深度点的向量，称为当前点的法向量
 	ptDiff.x = curr3Dpoint.x - tmp3Dpoint.x;
 	ptDiff.y = curr3Dpoint.y - tmp3Dpoint.y;
 	ptDiff.z = curr3Dpoint.z - tmp3Dpoint.z;
+//    对应模型点到当前深度点的距离
 	float dist = ptDiff.x * ptDiff.x + ptDiff.y * ptDiff.y + ptDiff.z * ptDiff.z;
-
+//  没找到spaceThresh在哪初始化的
 	if (dist > tukeyCutOff * spaceThresh) return false;
-
+//  双线性插值法，不太懂这是在干嘛？？？？？？？？？？？？？？？
 	corr3Dnormal = interpolateBilinear_withHoles(normalsMap, tmp2Dpoint, sceneImageSize);
 	//if (corr3Dnormal.w < 0.0f) return false;
 
+
 	depthWeight = MAX(0.0f, 1.0f - (depth - viewFrustum_min) / (viewFrustum_max - viewFrustum_min));
 	depthWeight *= depthWeight;
-
 	if (useWeights)
 	{
 		if (curr3Dpoint.w < framesToSkip) return false;

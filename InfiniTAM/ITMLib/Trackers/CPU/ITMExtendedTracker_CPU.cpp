@@ -53,14 +53,8 @@ int ITMExtendedTracker_CPU::ComputeGandH_Depth(float &f, float *nabla, float *he
 	Vector4f sceneIntrinsics = sceneHierarchyLevel_Depth->intrinsics;
 	Vector2i sceneImageSize = sceneHierarchyLevel_Depth->pointsMap->noDims;
 
-//    std::cout<<"++++++++++++++++++++"<<std::endl;
-//    for (int i = 0; i <=4; ++i) {
-//        std::cout<<pointsMap[i]<<"  ";
-//    }
-//    std::cout<<std::endl;
-//    for (int i = 0; i <=4; ++i) {
-//        std::cout<<normalsMap[i]<<"  ";
-//    }
+    std::cout<<"++++++++++++++++++++"<<std::endl;
+
 //    std::cout<<std::endl;
 //    std::cout<<sceneIntrinsics<<std::endl;
 //    std::cout<<sceneImageSize<<std::endl;
@@ -97,6 +91,8 @@ switch (currentIterationType) {
         printf("TRACKER_ITERATION_BOTH\n");
         break;
 }
+
+//    printf("x=%f,y=%f,z=%f,w=%f\n",viewIntrinsics.x,viewIntrinsics.y,viewIntrinsics.z,viewIntrinsics.w);
 
 	for (int y = 0; y < viewImageSize.y; y++)
         for (int x = 0; x < viewImageSize.x; x++)
