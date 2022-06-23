@@ -81,7 +81,7 @@ template<typename T> _CPU_AND_GPU_CODE_ inline Vector4f interpolateBilinear_with
 	const Vector2s p((short)floor(position.x), (short)floor(position.y));
 	const Vector2f delta(position.x - (float)p.x, position.y - (float)p.y);
 
-//  获取像素点左边和下边1个像素范围内4个像素的位置对应的点云的3维坐标
+//  获取像素点左边和下边1个像素范围内4个像素的位置对应的点云的3维坐标或法向量
 	const ORUtils::Vector4<T> a = source[p.x + p.y * imgSize.x];
 	const ORUtils::Vector4<T> b = source[(p.x + 1) + p.y * imgSize.x];
 	const ORUtils::Vector4<T> c = source[p.x + (p.y + 1) * imgSize.x];

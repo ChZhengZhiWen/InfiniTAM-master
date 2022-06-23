@@ -111,8 +111,11 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_exDepth_Ab(THREADPTR(float) *A,
 //    对应模型点到当前深度点的距离
 	float dist = ptDiff.x * ptDiff.x + ptDiff.y * ptDiff.y + ptDiff.z * ptDiff.z;
 //  没找到spaceThresh在哪初始化的
+//  过滤掉异常深度的点
 	if (dist > tukeyCutOff * spaceThresh) return false;
+
 //  双线性插值法，不太懂这是在干嘛？？？？？？？？？？？？？？？
+//  从原有模型中得到的点与法向量
 	corr3Dnormal = interpolateBilinear_withHoles(normalsMap, tmp2Dpoint, sceneImageSize);
 	//if (corr3Dnormal.w < 0.0f) return false;
 
@@ -125,9 +128,24 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_exDepth_Ab(THREADPTR(float) *A,
 		depthWeight *= (curr3Dpoint.w - framesToSkip) / framesToWeight;
 	}
 
+//  b_i = n_ix*q_ix+n_iy*q_iy+n_iz*q_iz-n_ix*p_ix-n_iy*p_iy-n_iz*p_iz
+//      = n_ix(q_ix-p_ix)+n_iy(q_iy-p_iy)+n_iz(q_iz-p_iz)
+//ptDiff.x = (q_ix-p_ix)
+//ptDiff.y = (q_iy-p_iy)
+//ptDiff.z = (q_iz-p_iz)
+//  b_i = n_ix*ptDiff.x + n_iy*ptDiff.y + n_iz*ptDiff.z
 	b = corr3Dnormal.x * ptDiff.x + corr3Dnormal.y * ptDiff.y + corr3Dnormal.z * ptDiff.z;
 
 	// TODO check whether normal matches normal from image, done in the original paper, but does not seem to be required
+    //根据链式求导，误差函数是两个向量乘积的二范数，当前求得的法向量对变换矩阵的偏导数（转换为李代数形式）
+//  去掉i
+//  (T*p-q)*n = α(n_z*p_y - n_y*p_z)+β(n_x*p_z - n_z*p_x)+γ(n_y*p_x - n_x*p_y) + t_x*n_x + t_y*n_y + t_z*n_z - b
+//  记x = [α,β,γ,t_x,t_y,t_z]^T
+//  [a_1 a_2 a_3 n_x n_y n_z] * x - b = 0
+//  a_1 = n_z*p_y - n_y*p_z
+//  a_2 = n_x*p_z - n_z*p_x
+//  a_3 = n_y*p_x - n_x*p_y
+//  代码里的A与公式里的a相差一个负号，暂不清楚用意
 	if (shortIteration)
 	{
 		if (rotationOnly)
@@ -143,6 +161,7 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_exDepth_Ab(THREADPTR(float) *A,
 		A[0] = +tmp3Dpoint.z * corr3Dnormal.y - tmp3Dpoint.y * corr3Dnormal.z;
 		A[1] = -tmp3Dpoint.z * corr3Dnormal.x + tmp3Dpoint.x * corr3Dnormal.z;
 		A[2] = +tmp3Dpoint.y * corr3Dnormal.x - tmp3Dpoint.x * corr3Dnormal.y;
+        //因此和上面一样，误差函数对当前求得的法向量的偏导数就是模型点的法向量的本身
 		A[!shortIteration ? 3 : 0] = corr3Dnormal.x; A[!shortIteration ? 4 : 1] = corr3Dnormal.y; A[!shortIteration ? 5 : 2] = corr3Dnormal.z;
 	}
 

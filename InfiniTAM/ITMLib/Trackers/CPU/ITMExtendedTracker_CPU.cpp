@@ -91,6 +91,7 @@ switch (currentIterationType) {
         printf("TRACKER_ITERATION_BOTH\n");
         break;
 }
+    printf("%f",spaceThresh[currentLevelId]);
 
 //    printf("x=%f,y=%f,z=%f,w=%f\n",viewIntrinsics.x,viewIntrinsics.y,viewIntrinsics.z,viewIntrinsics.w);
 

@@ -57,6 +57,7 @@ namespace ITMLib
 		ORUtils::SVMClassifier *svmClassifier;
 		Vector4f mu, sigma;
 	protected:
+//      在SetEvaluationParams中赋值
 		float *spaceThresh;
 		float *colourThresh;
 
