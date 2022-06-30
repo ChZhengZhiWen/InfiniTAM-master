@@ -479,6 +479,10 @@ void ITMExtendedTracker::TrackCamera(ITMTrackingState *trackingState, const ITMV
 			// evaluate error function and gradients
 			if (useDepth)
 			{
+//计算误差函数，雅可比矩阵，海塞矩阵
+//f_depth为整张图像所有像素点的加权误差
+//nabla_depth为雅克比矩阵
+//hessian_depth为海塞矩阵
 				noValidPoints_depth = ComputeGandH_Depth(f_depth, nabla_depth, hessian_depth, approxInvPose);
 
 				if (noValidPoints_depth > MIN_VALID_POINTS_DEPTH)

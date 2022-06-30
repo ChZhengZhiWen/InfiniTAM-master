@@ -56,6 +56,7 @@ _CPU_AND_GPU_CODE_ inline float rho(float r, float huber_b)
 
 _CPU_AND_GPU_CODE_ inline float rho_deriv(float r, float huber_b)
 {
+//  CLAMP  最大值为huber_b，最小值为r和-huber_b中小的那个
 	return 2.0f * CLAMP(r, -huber_b, huber_b);
 }
 
@@ -110,7 +111,7 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_exDepth_Ab(THREADPTR(float) *A,
 	ptDiff.z = curr3Dpoint.z - tmp3Dpoint.z;
 //    对应模型点到当前深度点的距离
 	float dist = ptDiff.x * ptDiff.x + ptDiff.y * ptDiff.y + ptDiff.z * ptDiff.z;
-//  没找到spaceThresh在哪初始化的
+//  spaceThresh在ITMExtendedTracker::SetupLevels中设置
 //  过滤掉异常深度的点
 	if (dist > tukeyCutOff * spaceThresh) return false;
 
@@ -119,9 +120,10 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_exDepth_Ab(THREADPTR(float) *A,
 	corr3Dnormal = interpolateBilinear_withHoles(normalsMap, tmp2Dpoint, sceneImageSize);
 	//if (corr3Dnormal.w < 0.0f) return false;
 
-
+//depthWeight？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？
 	depthWeight = MAX(0.0f, 1.0f - (depth - viewFrustum_min) / (viewFrustum_max - viewFrustum_min));
 	depthWeight *= depthWeight;
+
 	if (useWeights)
 	{
 		if (curr3Dpoint.w < framesToSkip) return false;
@@ -145,7 +147,7 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_exDepth_Ab(THREADPTR(float) *A,
 //  a_1 = n_z*p_y - n_y*p_z
 //  a_2 = n_x*p_z - n_z*p_x
 //  a_3 = n_y*p_x - n_x*p_y
-//  代码里的A与公式里的a相差一个负号，暂不清楚用意
+//  代码里的A与公式里的a相差一个负号，暂不清楚用意-------computePerPointGH_exDepth函数中有猜测
 	if (shortIteration)
 	{
 		if (rotationOnly)
@@ -336,19 +338,34 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_exDepth(THREADPTR(float) *local
 
 	if (!ret) return false;
 
+//  计算每个点代权重的误差，之后会将本帧所有点的误差求和得到本帧的误差
 	localF = rho(b, spaceThresh) * depthWeight;
 
 #if (defined(__CUDACC__) && defined(__CUDA_ARCH__)) || (defined(__METALC__))
 #pragma unroll
 #endif
+
+//  高斯牛顿和LM法中求解最小二乘的步骤为
+//  minF(x) = ||f(x)||^2
+//  解J(x) * J(x)^T * Δx = -J(x)f(x)
+//  记H(x) = J(x) * J(x)^T   g(x) = -J(x)f(x)
+//  H(x)Δx = g(x)
+//  computePerPointGH_exDepth_Ab求得的A与公式中差一个负号应该就是因为g(x) = -J(x)f(x)
+
+//  localNabla是rho函数魔改后的雅可比矩阵J，localHessian用于在ComputeGandH_Depth函数中构建出近似海森矩阵，具体看ITMExtendedTracker_CPU::ComputeGandH_Depth中的注释
 	for (int r = 0, counter = 0; r < noPara; r++)
 	{
 		localNabla[r] = rho_deriv(b, spaceThresh) * depthWeight * A[r];
 #if (defined(__CUDACC__) && defined(__CUDA_ARCH__)) || (defined(__METALC__))
 #pragma unroll
 #endif
-		for (int c = 0; c <= r; c++, counter++) localHessian[counter] = rho_deriv2(b, spaceThresh) * depthWeight * A[r] * A[c];
+		for (int c = 0; c <= r; c++, counter++){
+            localHessian[counter] = rho_deriv2(b, spaceThresh) * depthWeight * A[r] * A[c];
+//            printf("%d,%d,%d\n",r,c,counter);
+        }
+
 	}
+//    printf("+==========================================+\n");
 
 	return true;
 }

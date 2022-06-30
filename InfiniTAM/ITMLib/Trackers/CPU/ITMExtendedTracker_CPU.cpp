@@ -91,12 +91,13 @@ switch (currentIterationType) {
         printf("TRACKER_ITERATION_BOTH\n");
         break;
 }
-    printf("%f",spaceThresh[currentLevelId]);
 
 //    printf("x=%f,y=%f,z=%f,w=%f\n",viewIntrinsics.x,viewIntrinsics.y,viewIntrinsics.z,viewIntrinsics.w);
 
 	for (int y = 0; y < viewImageSize.y; y++)
         for (int x = 0; x < viewImageSize.x; x++)
+//    for (int y = 0; y < 10; y++)
+//        for (int x = 0; x < 100; x++)
         {
             float localHessian[6 + 5 + 4 + 3 + 2 + 1], localNabla[6], localF = 0;
 
@@ -165,18 +166,20 @@ switch (currentIterationType) {
             }
         }
 
-	// Copy the lower triangular part of the matrix.
+    // 依次填入海塞矩阵的上三角和下三角
+//  localHessian构建出3*3或6*6的近似海森矩阵
 	for (int r = 0, counter = 0; r < noPara; r++)
 		for (int c = 0; c <= r; c++, counter++)
 			hessian[r + c * 6] = sumHessian[counter];
 
-	// Transpose to fill the upper triangle.
 	for (int r = 0; r < noPara; ++r)
 		for (int c = r + 1; c < noPara; c++)
 			hessian[r + c * 6] = hessian[c + r * 6];
 
+    //填入雅可比矩阵
 	memcpy(nabla, sumNabla, noPara * sizeof(float));
 
+    //最终的误差函数值，用来比较是否收敛
 	f = sumF;
 
 	return noValidPoints;
