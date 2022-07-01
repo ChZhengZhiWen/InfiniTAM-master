@@ -488,6 +488,7 @@ void ITMExtendedTracker::TrackCamera(ITMTrackingState *trackingState, const ITMV
 				if (noValidPoints_depth > MIN_VALID_POINTS_DEPTH)
 				{
 					// Normalize nabla and hessian
+//                  图片总体的海塞矩阵和雅克比矩阵以及误差除以有效像素点个数进行归一化
 					for (int i = 0; i < 6 * 6; ++i) hessian_depth[i] /= noValidPoints_depth;
 					for (int i = 0; i < 6; ++i) nabla_depth[i] /= noValidPoints_depth;
 					f_depth /= noValidPoints_depth;
@@ -567,14 +568,17 @@ void ITMExtendedTracker::TrackCamera(ITMTrackingState *trackingState, const ITMV
 			}
 
 			// check if error increased. If so, revert
+            // 如果误差在迭代增大了，可能陷入局部最优，在LM法中的阻尼值需要增大，转向梯度下降法，否则阻尼值下降，转向高斯牛顿法
 			if ((noValidPoints_new <= 0) || (f_new >= f_old))
 			{
+//              当前深度相机位姿设为上次相机位姿
 				trackingState->pose_d->SetFrom(&lastKnownGoodPose);
 				approxInvPose = trackingState->pose_d->GetInvM();
 				lambda *= 10.0f;
 			}
 			else
 			{
+                //更新迭代位姿和误差值
 				lastKnownGoodPose.SetFrom(trackingState->pose_d);
 				f_old = f_new;
 
@@ -590,10 +594,13 @@ void ITMExtendedTracker::TrackCamera(ITMTrackingState *trackingState, const ITMV
 
 			float A[6 * 6];
 			for (int i = 0; i < 6 * 6; ++i) A[i] = hessian_good[i];
+//          对角线元素进行操作
+//            不知道什么操作？？？？？？？？？？？？？？？？？？？？？？？？？？
 			for (int i = 0; i < 6; ++i) A[i + i * 6] *= 1.0f + lambda;
 
 			// compute a new step and make sure we've got an SE3
 			float step[6];
+            //求H△x=g的解，得到迭代步长并继续迭代
 			ComputeDelta(step, nabla_good, A, currentIterationType != TRACKER_ITERATION_BOTH);
 
 			ApplyDelta(approxInvPose, step, approxInvPose);
@@ -603,8 +610,10 @@ void ITMExtendedTracker::TrackCamera(ITMTrackingState *trackingState, const ITMV
 
 			// if step is small, assume it's going to decrease the error and finish
 			if (HasConverged(step)) break;
-		}
-	}
 
+		}//for (int iterNo = 0; iterNo < noIterationsPerLevel[levelId]; iterNo++)
+	}//for (int levelId = viewHierarchy_Depth->GetNoLevels() - 1; levelId >= 0; levelId--)
+
+    //    用支持向量机来对本次位姿估计进行评分
 	this->UpdatePoseQuality(noValidPoints_depth_good, hessian_depth_good, f_depth_good);
 }

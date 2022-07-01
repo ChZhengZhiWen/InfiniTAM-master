@@ -57,11 +57,13 @@ _CPU_AND_GPU_CODE_ inline float rho(float r, float huber_b)
 _CPU_AND_GPU_CODE_ inline float rho_deriv(float r, float huber_b)
 {
 //  CLAMP  最大值为huber_b，最小值为r和-huber_b中小的那个
+//  将误差限制在一个范围内如果在范围内则乘个2这个2应该是经验值
 	return 2.0f * CLAMP(r, -huber_b, huber_b);
 }
 
 _CPU_AND_GPU_CODE_ inline float rho_deriv2(float r, float huber_b)
 {
+    //  将误差限制在一个范围内如果在范围内则乘个2这个2应该是经验值，否则乘个0意味则放弃这个点
 	return fabs(r) < huber_b ? 2.0f : 0.0f;
 }
 
@@ -356,11 +358,13 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_exDepth(THREADPTR(float) *local
 	for (int r = 0, counter = 0; r < noPara; r++)
 	{
 		localNabla[r] = rho_deriv(b, spaceThresh) * depthWeight * A[r];
+//		localNabla[r] = depthWeight * A[r];
 #if (defined(__CUDACC__) && defined(__CUDA_ARCH__)) || (defined(__METALC__))
 #pragma unroll
 #endif
 		for (int c = 0; c <= r; c++, counter++){
             localHessian[counter] = rho_deriv2(b, spaceThresh) * depthWeight * A[r] * A[c];
+//            localHessian[counter] = depthWeight * A[r] * A[c];
 //            printf("%d,%d,%d\n",r,c,counter);
         }
 
