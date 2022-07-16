@@ -294,12 +294,15 @@ void ITMExtendedTracker::SetEvaluationParams(int levelId)
 
 void ITMExtendedTracker::ComputeDelta(float *step, float *nabla, float *hessian, bool shortIteration) const
 {
+//    printf("------------------------------------------\n");
 	for (int i = 0; i < 6; i++) step[i] = 0;
 
 	if (shortIteration)
 	{
 		float smallHessian[3 * 3];
-		for (int r = 0; r < 3; r++) for (int c = 0; c < 3; c++) smallHessian[r + c * 3] = hessian[r + c * 6];
+		for (int r = 0; r < 3; r++)
+            for (int c = 0; c < 3; c++)
+                smallHessian[r + c * 3] = hessian[r + c * 6];
 
 		ORUtils::Cholesky cholA(smallHessian, 3);
 		cholA.Backsub(step, nabla);
@@ -309,6 +312,7 @@ void ITMExtendedTracker::ComputeDelta(float *step, float *nabla, float *hessian,
 		ORUtils::Cholesky cholA(hessian, 6);
 		cholA.Backsub(step, nabla);
 	}
+//    printf("++++++++++++++++++++++++++++++++++++++++++++++++\n");
 }
 
 bool ITMExtendedTracker::HasConverged(float *step) const
@@ -347,6 +351,8 @@ void ITMExtendedTracker::ApplyDelta(const Matrix4f & para_old, const float *delt
 
 	Matrix4f Tinc;
 
+//  平移向量直接写在变换矩阵最右侧，而旋转矩阵需要将扰动转为反对称矩阵
+//  与正常反对称矩阵相比这里的反对称矩阵乘了个-1
 	Tinc.m00 = 1.0f;		Tinc.m10 = step[2];		Tinc.m20 = -step[1];	Tinc.m30 = step[3];
 	Tinc.m01 = -step[2];	Tinc.m11 = 1.0f;		Tinc.m21 = step[0];		Tinc.m31 = step[4];
 	Tinc.m02 = step[1];		Tinc.m12 = -step[0];	Tinc.m22 = 1.0f;		Tinc.m32 = step[5];
@@ -461,6 +467,7 @@ void ITMExtendedTracker::TrackCamera(ITMTrackingState *trackingState, const ITMV
 //std::cout<<std::endl<<"----"<<std::endl;
 
 //      noIterationsPerLevel=[50,40,30,20]
+//      迭代优化的循环
 		for (int iterNo = 0; iterNo < noIterationsPerLevel[levelId]; iterNo++)
 		{
 			float hessian_depth[6 * 6], hessian_RGB[6 * 6];
@@ -595,12 +602,12 @@ void ITMExtendedTracker::TrackCamera(ITMTrackingState *trackingState, const ITMV
 			float A[6 * 6];
 			for (int i = 0; i < 6 * 6; ++i) A[i] = hessian_good[i];
 //          对角线元素进行操作
-//            不知道什么操作？？？？？？？？？？？？？？？？？？？？？？？？？？
+//          应该是LM方法中(H+λD^TD)Δxk=g(xk)的H+λD^TD操作  其中系数矩阵D = I
 			for (int i = 0; i < 6; ++i) A[i + i * 6] *= 1.0f + lambda;
 
 			// compute a new step and make sure we've got an SE3
 			float step[6];
-            //求H△x=g的解，得到迭代步长并继续迭代
+            //求H△x=g的解，ComputeDelta得到迭代步长
 			ComputeDelta(step, nabla_good, A, currentIterationType != TRACKER_ITERATION_BOTH);
 
 			ApplyDelta(approxInvPose, step, approxInvPose);

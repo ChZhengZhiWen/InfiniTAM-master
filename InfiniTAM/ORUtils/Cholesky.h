@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vector>
+#include <iostream>
 
 namespace ORUtils
 {
@@ -26,9 +27,20 @@ namespace ORUtils
 				F inv_diag = 1;
 				for (int r = c; r < size; r++)
 				{
+//					c + r * size是按列获取海塞矩阵的值
 					F val = cholesky[c + r * size];
-					for (int c2 = 0; c2 < c; c2++) 
+					for (int c2 = 0; c2 < c; c2++) {
 						val -= cholesky[c + c2 * size] * cholesky[c2 + r * size];
+
+//                        if (size == 3){
+//                            printf("c=%d r=%d c2=%d\n",c,r,c2);
+//                            printf("c + r * size = %d   ",c + r * size);
+//                            printf("c + c2 * size = %d   ",c + c2 * size);
+//                            printf("c2 + r * size = %d\n",c2 + r * size);
+//                        }
+
+					}
+
 
 					if (r == c)
 					{
@@ -45,6 +57,18 @@ namespace ORUtils
 			}
 
 			rank = size;
+
+//            for (int i = 0; i < cholesky.size(); i++)
+//            {
+//                std::cout << cholesky[i] << " ";
+//            }
+//            std::cout<<std::endl;
+//
+//            for (int i = 0; i < 9; i++)
+//            {
+//                std::cout << mat[i] << " ";
+//            }
+//            std::cout<<std::endl;
 		}
 
 		F Determinant(void) const

@@ -17,7 +17,9 @@ namespace FernRelocLib
 	class Relocaliser
 	{
 	private:
+//        关键帧捕获阈值
 		float keyframeHarvestingThreshold;
+//      Randomized Ferns编码
 		FernConservatory *encoding;
 		RelocDatabase *relocDatabase;
 		PoseDatabase *poseDatabase;
@@ -27,10 +29,11 @@ namespace FernRelocLib
 		Relocaliser(ORUtils::Vector2<int> imgSize, ORUtils::Vector2<float> range, float harvestingThreshold, int numFerns, int numDecisionsPerFern)
 		{
 			static const int levels = 5;
+            //            1 << 5 = 0x100000 == 32
 			encoding = new FernConservatory(numFerns, imgSize / (1 << levels), range, numDecisionsPerFern);
-			relocDatabase = new RelocDatabase(numFerns, encoding->getNumCodes());
+			relocDatabase = new RelocDatabase(numFerns, encoding->getNumCodes());//getNumCodes return 1 << 4 = 0x10000 == 16
 			poseDatabase = new PoseDatabase();
-			keyframeHarvestingThreshold = harvestingThreshold;
+			keyframeHarvestingThreshold = harvestingThreshold;//0.2f
 
 			processedImage1 = new ORUtils::Image<ElementType>(imgSize, MEMORYDEVICE_CPU);
 			processedImage2 = new ORUtils::Image<ElementType>(imgSize, MEMORYDEVICE_CPU);
@@ -47,7 +50,7 @@ namespace FernRelocLib
 
 		bool ProcessFrame(const ORUtils::Image<ElementType> *img, const ORUtils::SE3Pose *pose, int sceneId, int k, int nearestNeighbours[], float *distances, bool harvestKeyframes) const
 		{
-			// downsample and preprocess image => processedImage1
+			// downsample and preprocess image => processedImage1 下采样和预处理图像=>处理图像1
 			filterSubsample(img, processedImage1); // 320x240
 			filterSubsample(processedImage1, processedImage2); // 160x120
 			filterSubsample(processedImage2, processedImage1); // 80x60
@@ -56,20 +59,22 @@ namespace FernRelocLib
 			filterGaussian(processedImage2, processedImage1, 2.5f);
 
 			// compute code
-			int codeLength = encoding->getNumFerns();
+			int codeLength = encoding->getNumFerns();//500
 			char *code = new char[codeLength];
+            //void computeCode(const ORUtils::Image<float> *img, char *codeFragments) const;
+//            计算给定图片的4个ferns
 			encoding->computeCode(processedImage1, code);
 
 			// prepare outputs
 			int ret = -1;
 			bool releaseDistances = (distances == NULL);
-			if (distances == NULL) distances = new float[k];
+			if (distances == NULL) distances = new float[k];//k=1
 
 			// find similar frames
 			int similarFound = relocDatabase->findMostSimilar(code, nearestNeighbours, distances, k);
 
 			// add keyframe to database
-			if (harvestKeyframes)
+			if (harvestKeyframes)//harvestKeyframes 收获关键帧
 			{
 				if (similarFound == 0) ret = relocDatabase->addEntry(code);
 				else if (distances[0] > keyframeHarvestingThreshold) ret = relocDatabase->addEntry(code);

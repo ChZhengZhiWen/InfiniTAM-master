@@ -57,13 +57,13 @@ _CPU_AND_GPU_CODE_ inline float rho(float r, float huber_b)
 _CPU_AND_GPU_CODE_ inline float rho_deriv(float r, float huber_b)
 {
 //  CLAMP  最大值为huber_b，最小值为r和-huber_b中小的那个
-//  将误差限制在一个范围内如果在范围内则乘个2这个2应该是经验值
+//  将误差限制在一个范围内如果在范围内则乘个2这个2应该是经验值         错了，b不是误差
 	return 2.0f * CLAMP(r, -huber_b, huber_b);
 }
 
 _CPU_AND_GPU_CODE_ inline float rho_deriv2(float r, float huber_b)
 {
-    //  将误差限制在一个范围内如果在范围内则乘个2这个2应该是经验值，否则乘个0意味则放弃这个点
+    //  将误差限制在一个范围内如果在范围内则乘个2这个2应该是经验值，否则乘个0意味则放弃这个点          错了，b不是误差
 	return fabs(r) < huber_b ? 2.0f : 0.0f;
 }
 
@@ -90,6 +90,7 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_exDepth_Ab(THREADPTR(float) *A,
 
 	// transform to previous frame coordinates
     //按上次计算的位姿，将相机坐标系转换到上个位姿的视角
+//  LM优化迭代的时候x+Δx的操作也是这个
 	tmp3Dpoint = approxInvPose * tmp3Dpoint;
 	tmp3Dpoint.w = 1.0f;
 
@@ -138,6 +139,9 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_exDepth_Ab(THREADPTR(float) *A,
 //ptDiff.y = (q_iy-p_iy)
 //ptDiff.z = (q_iz-p_iz)
 //  b_i = n_ix*ptDiff.x + n_iy*ptDiff.y + n_iz*ptDiff.z
+//  b在这里表示的应该就是误差，但不理解为何 因为根据公式b只是f(x) = ax-b中的b，不清楚为什么这里代表f(x)误差
+
+//  将当前点云转换到上一帧位姿，再投影到模型中得到相对应的模型点，而每个模型点都拥有法向量，将模型点到转换后点云点作为当前“法向量”，这两个法向量的夹角就组成了求当前位姿的误差函数，这种方法也可称为点到面的ICP方法。
 	b = corr3Dnormal.x * ptDiff.x + corr3Dnormal.y * ptDiff.y + corr3Dnormal.z * ptDiff.z;
 
 	// TODO check whether normal matches normal from image, done in the original paper, but does not seem to be required

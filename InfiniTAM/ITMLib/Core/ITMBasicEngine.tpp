@@ -2,6 +2,7 @@
 
 #include "ITMBasicEngine.h"
 
+#include <iostream>
 #include "../Engines/LowLevel/ITMLowLevelEngineFactory.h"
 #include "../Engines/Meshing/ITMMeshingEngineFactory.h"
 #include "../Engines/ViewBuilding/ITMViewBuilderFactory.h"
@@ -63,9 +64,10 @@ ITMBasicEngine<TVoxel,TIndex>::ITMBasicEngine(const ITMLibSettings *settings, co
 
 	view = NULL; // will be allocated by the view builder
 
-//大概是跟踪失败之后是否进行重定位
+//  如果跟踪失败之后需要进行重定位，初始化重定位函数
 	if (settings->behaviourOnFailure == settings->FAILUREMODE_RELOCALISE)
 		relocaliser = new FernRelocLib::Relocaliser<float>(imgSize_d, Vector2f(settings->sceneParams.viewFrustum_min, settings->sceneParams.viewFrustum_max), 0.2f, 500, 4);
+//    Vector2f(settings->sceneParams.viewFrustum_min, settings->sceneParams.viewFrustum_max) raycasting最大最小范围
 	else relocaliser = NULL;
 
 	kfRaycast = new ITMUChar4Image(imgSize_d, memoryType);
@@ -290,19 +292,23 @@ ITMTrackingState::TrackingResult ITMBasicEngine<TVoxel,TIndex>::ProcessFrame(ITM
 		if (trackerResult == ITMTrackingState::TRACKING_GOOD && relocalisationCount > 0) relocalisationCount--;
 
 		int NN; float distances;
+//        如果可能，将数据从GPU传输到CPU
 		view->depth->UpdateHostFromDevice();
 
 		//find and add keyframe, if necessary
 		bool hasAddedKeyframe = relocaliser->ProcessFrame(view->depth, trackingState->pose_d, 0, 1, &NN, &distances, trackerResult == ITMTrackingState::TRACKING_GOOD && relocalisationCount == 0);
 
 		//frame not added and tracking failed -> we need to relocalise
+//      未添加帧且跟踪失败->需要重新定位
 		if (!hasAddedKeyframe && trackerResult == ITMTrackingState::TRACKING_FAILED)
 		{
 			relocalisationCount = 10;
 
 			// Reset previous rgb frame since the rgb image is likely different than the one acquired when setting the keyframe
+//            重置上一个rgb帧，因为rgb图像可能与设置关键帧时获取的图像不同
 			view->rgb_prev->Clear();
 
+//            NN为匹配到的关键帧
 			const FernRelocLib::PoseDatabase::PoseInScene & keyframe = relocaliser->RetrievePose(NN);
 			trackingState->pose_d->SetFrom(&keyframe.pose);
 

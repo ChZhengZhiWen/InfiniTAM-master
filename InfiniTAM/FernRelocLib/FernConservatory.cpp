@@ -13,8 +13,8 @@ static float random_uniform01(void)
 
 FernConservatory::FernConservatory(int numFerns, ORUtils::Vector2<int> imgSize, ORUtils::Vector2<float> bounds, int decisionsPerFern)
 {
-	mNumFerns = numFerns;
-	mNumDecisions = decisionsPerFern;
+	mNumFerns = numFerns;//500 块
+	mNumDecisions = decisionsPerFern;//4 每个块4个fern编码rgbd
 	mEncoders = new FernTester[mNumFerns*decisionsPerFern];
 	for (int f = 0; f < mNumFerns*decisionsPerFern; ++f) {
 		mEncoders[f].location.x = (int)floor(random_uniform01() * imgSize.x);
@@ -41,7 +41,7 @@ void FernConservatory::computeCode(const ORUtils::Image<float> *img, char *codeF
 			float val = imgData[locId];
 
 			/*if (val <= 0.0f) codeFragments[f] = -1;
-			else*/ codeFragments[f] |= ((val < tester->threshold) ? 0 : 1) << d;
+			else*/ codeFragments[f] |= ((val < tester->threshold) ? 0 : 1) << d;//存储的是十进制
 		}
 	}
 }

@@ -10,8 +10,8 @@ using namespace FernRelocLib;
 RelocDatabase::RelocDatabase(int codeLength, int codeFragmentDim)
 {
 	mTotalEntries = 0;
-	mCodeLength = codeLength;
-	mCodeFragmentDim = codeFragmentDim;
+	mCodeLength = codeLength;//500
+	mCodeFragmentDim = codeFragmentDim;//16  4位fern编码有2^4 16中情况
 
 	mIds = new std::vector<int>[codeLength*codeFragmentDim];
 }
@@ -32,10 +32,22 @@ int RelocDatabase::findMostSimilar(const char *codeFragments, int nearestNeighbo
 		for (int f = 0; f < mCodeLength; f++)
 		{
 			if (codeFragments[f] < 0) continue;
+            //将已有的ferns编码拿出来
 			const std::vector<int> *sameCode = &(mIds[f * mCodeFragmentDim + codeFragments[f]]);
 
+            //sameCode->size()返回push_back了多少个值
 			for (unsigned int i = 0; i < sameCode->size(); ++i) similarities[(*sameCode)[i]]++;
 		}
+//        vertor指针还需学习
+//        vector<int> *mIds = new vector<int>[500*16];
+//        vector<int> *sameCode = &(mIds[100]);
+//        sameCode->push_back(10);
+//        vector<int> *sameCode1 = &(mIds[200]);
+//        sameCode1->push_back(10);
+//
+//// 	vector<int> *sameCode2 = &(mIds[200]); = 1
+//        vector<int> *sameCode2 = &(mIds[201]); //= 0
+//        cout<<sameCode2->size();
 
 		for (int i = 0; i < mTotalEntries; ++i)
 		{
