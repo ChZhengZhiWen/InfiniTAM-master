@@ -65,11 +65,17 @@ namespace ITMLib
 		void Prepare(ITMTrackingState *trackingState, const ITMScene<TVoxel,TIndex> *scene, const ITMView *view,
 			const ITMVisualisationEngine<TVoxel,TIndex> *visualisationEngine, ITMRenderState *renderState)
 		{
+            //requiresPointCloudRendering在ITMExtendedTracker中直接返回true
 			if (!tracker->requiresPointCloudRendering())
 				return;
 
 			//render for tracking
+            //requiresColourRendering 在ITMExtendedTracker中直接返回 false
 			bool requiresColourRendering = tracker->requiresColourRendering();
+//            为了降低计算成本，没有必要对每一帧
+//            都进行射线投影，当相机的位姿变化不大或者离最近一次射线投影的帧不远，
+//            就可以跳过射线投影。转而用上一次射线投影得到的点云继续定位新传入图像。
+//          ITMLibSettings.cpp中useApproximateRaycast默认为false
 			bool requiresFullRendering = trackingState->TrackerFarFromPointCloud() || !settings->useApproximateRaycast;
 
 			if (requiresColourRendering)

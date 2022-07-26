@@ -189,8 +189,10 @@ _CPU_AND_GPU_CODE_ inline void buildHashAllocAndVisibleTypePP(DEVICEPTR(uchar) *
 	Vector4f pt_camera_f; Vector3f point_e, point, direction; Vector3s blockPos;
 
 	depth_measure = depth[x + y * imgSize.x];
+//    ？？？？？？？？？？？？
 	if (depth_measure <= 0 || (depth_measure - mu) < 0 || (depth_measure - mu) < viewFrustum_min || (depth_measure + mu) > viewFrustum_max) return;
 
+    //相机坐标系3D坐标
 	pt_camera_f.z = depth_measure;
 	pt_camera_f.x = pt_camera_f.z * ((float(x) - projParams_d.z) * projParams_d.x);
 	pt_camera_f.y = pt_camera_f.z * ((float(y) - projParams_d.w) * projParams_d.y);
@@ -198,7 +200,11 @@ _CPU_AND_GPU_CODE_ inline void buildHashAllocAndVisibleTypePP(DEVICEPTR(uchar) *
 	float norm = sqrt(pt_camera_f.x * pt_camera_f.x + pt_camera_f.y * pt_camera_f.y + pt_camera_f.z * pt_camera_f.z);
 
 	Vector4f pt_buff;
-	
+
+    //坐标 * （1 - mu/坐标到原点距离)
+    //pt_buff应该就是模型表面截断带前后的位置
+    //之后再除以体素block的大小获得体素block坐标？？？？？？？
+    //遍历深度图像素，对深度d在d-u和d+u范围内在视线上创建一个段；取段上的体素块坐标计算hash值检查是否已经分配，如果没有，则将哈希表对应位置标记为“分配给这个block”
 	pt_buff = pt_camera_f * (1.0f - mu / norm); pt_buff.w = 1.0f;
 	point = TO_VECTOR3(invM_d * pt_buff) * oneOverVoxelSize;
 
@@ -208,6 +214,8 @@ _CPU_AND_GPU_CODE_ inline void buildHashAllocAndVisibleTypePP(DEVICEPTR(uchar) *
 	direction = point_e - point;
 	norm = sqrt(direction.x * direction.x + direction.y * direction.y + direction.z * direction.z);
 	noSteps = (int)ceil(2.0f*norm);
+
+//    printf("norm = %f noSteps = %d  ||| ",norm,noSteps);
 
 	direction /= (float)(noSteps - 1);
 
@@ -219,7 +227,7 @@ _CPU_AND_GPU_CODE_ inline void buildHashAllocAndVisibleTypePP(DEVICEPTR(uchar) *
 		//compute index in hash table
 		hashIdx = hashIndex(blockPos);
 
-		//check if hash table contains entry
+		//check if hash table contains entry 检查哈希表是否包含条目
 		bool isFound = false;
 
 		ITMHashEntry hashEntry = hashTable[hashIdx];
@@ -235,7 +243,8 @@ _CPU_AND_GPU_CODE_ inline void buildHashAllocAndVisibleTypePP(DEVICEPTR(uchar) *
 		if (!isFound)
 		{
 			bool isExcess = false;
-			if (hashEntry.ptr >= -1) //seach excess list only if there is no room in ordered part
+            //seach excess list only if there is no room in ordered part 仅当顺序哈希表中没有空间时才搜索超额列表
+			if (hashEntry.ptr >= -1)
 			{
 				while (hashEntry.offset >= 1)
 				{
@@ -279,6 +288,7 @@ _CPU_AND_GPU_CODE_ inline void checkPointVisibility(THREADPTR(bool) &isVisible, 
 
 	if (pt_buff.z < 1e-10f) return;
 
+	//像素平面坐标
 	pt_buff.x = projParams_d.x * pt_buff.x / pt_buff.z + projParams_d.z;
 	pt_buff.y = projParams_d.y * pt_buff.y / pt_buff.z + projParams_d.w;
 
@@ -293,6 +303,7 @@ _CPU_AND_GPU_CODE_ inline void checkPointVisibility(THREADPTR(bool) &isVisible, 
 	}
 }
 
+///将block8个角的空间坐标转换到当前相机位姿态下的像素平面，看像素平面的坐标是否越界来判断可见性找到所有的当前帧可见的已分配的voxel block
 template<bool useSwapping>
 _CPU_AND_GPU_CODE_ inline void checkBlockVisibility(THREADPTR(bool) &isVisible, THREADPTR(bool) &isVisibleEnlarged,
 	const THREADPTR(Vector3s) &hashPos, const CONSTPTR(Matrix4f) & M_d, const CONSTPTR(Vector4f) &projParams_d,
@@ -304,6 +315,8 @@ _CPU_AND_GPU_CODE_ inline void checkBlockVisibility(THREADPTR(bool) &isVisible, 
 	isVisible = false; isVisibleEnlarged = false;
 
 	// 0 0 0
+	// block坐标转换为真实坐标
+	// 检测block8个角的可见性
 	pt_image.x = (float)hashPos.x * factor; pt_image.y = (float)hashPos.y * factor;
 	pt_image.z = (float)hashPos.z * factor; pt_image.w = 1.0f;
 	checkPointVisibility<useSwapping>(isVisible, isVisibleEnlarged, pt_image, M_d, projParams_d, imgSize);

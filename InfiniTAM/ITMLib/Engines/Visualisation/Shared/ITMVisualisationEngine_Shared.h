@@ -367,6 +367,7 @@ _CPU_AND_GPU_CODE_ inline void processPixelICP(DEVICEPTR(Vector4f) *pointsMap, D
 
 	bool foundPoint = point.w > 0.0f;
 
+    //？？？？？？？？？？？
 	computeNormalAndAngle<useSmoothing, flipNormals>(foundPoint, x, y, pointsRay, lightSource, voxelSize, imgSize, outNormal, angle);
 
 	if (foundPoint)

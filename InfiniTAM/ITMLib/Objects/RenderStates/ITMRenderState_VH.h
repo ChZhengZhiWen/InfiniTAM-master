@@ -28,6 +28,7 @@ namespace ITMLib
 		currently being processed by integration
 		and tracker.
 		*/
+//entriesVisibleType == 1应该是代表条目可见 == 2应该是代表条目已经被移除
 		ORUtils::MemoryBlock<uchar> *entriesVisibleType;
            
 	public:

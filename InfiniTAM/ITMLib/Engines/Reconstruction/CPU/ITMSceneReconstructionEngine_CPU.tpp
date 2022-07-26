@@ -118,8 +118,10 @@ template<class TVoxel>
 void ITMSceneReconstructionEngine_CPU<TVoxel, ITMVoxelBlockHash>::AllocateSceneFromDepth(ITMScene<TVoxel, ITMVoxelBlockHash> *scene, const ITMView *view,
 	const ITMTrackingState *trackingState, const ITMRenderState *renderState, bool onlyUpdateVisibleList, bool resetVisibleList)
 {
+    printf("onlyUpdateVisibleList = %d || ITMSceneReconstructionEngine_CPU.tpp-121\n",onlyUpdateVisibleList);
 	Vector2i depthImgSize = view->depth->noDims;
-	float voxelSize = scene->sceneParams->voxelSize;
+    //voxelSize=0.005
+	float voxelSize = scene->sceneParams->voxelSize;/// Size of a voxel, usually given in meters.
 
 	Matrix4f M_d, invM_d;
 	Vector4f projParams_d, invProjParams_d;
@@ -134,7 +136,8 @@ void ITMSceneReconstructionEngine_CPU<TVoxel, ITMVoxelBlockHash>::AllocateSceneF
 	invProjParams_d.x = 1.0f / invProjParams_d.x;
 	invProjParams_d.y = 1.0f / invProjParams_d.y;
 
-	float mu = scene->sceneParams->mu;
+    //mu = 0.02
+	float mu = scene->sceneParams->mu;//生成的体素宽度为mu/voxelSize。
 
 	float *depth = view->depth->GetData(MEMORYDEVICE_CPU);
 	int *voxelAllocationList = scene->localVBA.GetAllocationList();
@@ -144,12 +147,14 @@ void ITMSceneReconstructionEngine_CPU<TVoxel, ITMVoxelBlockHash>::AllocateSceneF
 	int *visibleEntryIDs = renderState_vh->GetVisibleEntryIDs();
 	uchar *entriesVisibleType = renderState_vh->GetEntriesVisibleType();
 	uchar *entriesAllocType = this->entriesAllocType->GetData(MEMORYDEVICE_CPU);
+    //blockCoords 块坐标
 	Vector4s *blockCoords = this->blockCoords->GetData(MEMORYDEVICE_CPU);
+    //hash_bucket+excess_list_size
 	int noTotalEntries = scene->index.noTotalEntries;
 
 	bool useSwapping = scene->globalCache != NULL;
 
-	float oneOverVoxelSize = 1.0f / (voxelSize * SDF_BLOCK_SIZE);
+	float oneOverVoxelSize = 1.0f / (voxelSize * SDF_BLOCK_SIZE);//体素大小*8
 
 	int lastFreeVoxelBlockId = scene->localVBA.lastFreeBlockId;
 	int lastFreeExcessListId = scene->index.GetLastFreeExcessListId();
@@ -158,6 +163,11 @@ void ITMSceneReconstructionEngine_CPU<TVoxel, ITMVoxelBlockHash>::AllocateSceneF
 
 	memset(entriesAllocType, 0, noTotalEntries);
 
+//    entriesVisibleType[visibleEntryIDs[i]] = 3  =3代表什么不清楚
+//    Visible list update : 将所有已经分配的voxel block的八个角投影到当前相机视点中，来检查它们的可见性，这样可以保证找到所有的当前帧
+//    可见voxel block，但是这样的话计算的开销过大。因此，在实际操作中，只对上一帧可见且没有在分配阶段被标记的voxel block进行检验，这样就
+//    只需要很少的开销便可以获得当前帧的可见块列表，并且这些开销和场景的大小无关。
+//    可能是这个解释
 	for (int i = 0; i < renderState_vh->noVisibleEntries; i++)
 		entriesVisibleType[visibleEntryIDs[i]] = 3; // visible at previous frame and unstreamed
 
@@ -167,6 +177,7 @@ void ITMSceneReconstructionEngine_CPU<TVoxel, ITMVoxelBlockHash>::AllocateSceneF
 #endif
 	for (int locId = 0; locId < depthImgSize.x*depthImgSize.y; locId++)
 	{
+        //这里就是一行一行取数据，最开始一直y=0，直到locId=depthImgSize.x时。此时第一行已经到末尾了y=1进行下一行
 		int y = locId / depthImgSize.x;
 		int x = locId - y * depthImgSize.x;
 		buildHashAllocAndVisibleTypePP(entriesAllocType, entriesVisibleType, x, y, blockCoords, depth, invM_d,
