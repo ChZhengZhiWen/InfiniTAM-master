@@ -189,7 +189,7 @@ _CPU_AND_GPU_CODE_ inline void buildHashAllocAndVisibleTypePP(DEVICEPTR(uchar) *
 	Vector4f pt_camera_f; Vector3f point_e, point, direction; Vector3s blockPos;
 
 	depth_measure = depth[x + y * imgSize.x];
-//    ？？？？？？？？？？？？
+///    ？？？？？？？？？？？？
 	if (depth_measure <= 0 || (depth_measure - mu) < 0 || (depth_measure - mu) < viewFrustum_min || (depth_measure + mu) > viewFrustum_max) return;
 
     //相机坐标系3D坐标
@@ -203,7 +203,7 @@ _CPU_AND_GPU_CODE_ inline void buildHashAllocAndVisibleTypePP(DEVICEPTR(uchar) *
 
     //坐标 * （1 - mu/坐标到原点距离)
     //pt_buff应该就是模型表面截断带前后的位置
-    //之后再除以体素block的大小获得体素block坐标？？？？？？？
+    ///之后再除以体素block的大小获得体素block坐标？？？？？？？
     //遍历深度图像素，对深度d在d-u和d+u范围内在视线上创建一个段；取段上的体素块坐标计算hash值检查是否已经分配，如果没有，则将哈希表对应位置标记为“分配给这个block”
 	pt_buff = pt_camera_f * (1.0f - mu / norm); pt_buff.w = 1.0f;
 	point = TO_VECTOR3(invM_d * pt_buff) * oneOverVoxelSize;

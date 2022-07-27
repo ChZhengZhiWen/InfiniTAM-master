@@ -59,7 +59,7 @@ ITMBasicEngine<TVoxel,TIndex>::ITMBasicEngine(const ITMLibSettings *settings, co
 	renderState_freeview = NULL; //will be created if needed
 //初始化点云（点云包含位置信息和颜色信息）、点云位姿、深度图位姿等
 	trackingState = new ITMTrackingState(trackedImageSize, memoryType);
-//更新场景中深度摄影机的初始姿势。这可用于使场景上方向向量与真实世界的上方向相对应？？？？？？？？？？
+///更新场景中深度摄影机的初始姿势。这可用于使场景上方向向量与真实世界的上方向相对应？？？？？？？？？？
 	tracker->UpdateInitialPose(trackingState);
 
 	view = NULL; // will be allocated by the view builder
@@ -334,7 +334,7 @@ ITMTrackingState::TrackingResult ITMBasicEngine<TVoxel,TIndex>::ProcessFrame(ITM
 	{
 		if (!didFusion) denseMapper->UpdateVisibleList(view, trackingState, scene, renderState_live);
 
-		// raycast to renderState_live for tracking and free visualisation
+		// raycast to renderState_live for tracking and free visualisation 光线投射到renderState_live，用于跟踪和自由可视化
 		trackingController->Prepare(trackingState, scene, view, visualisationEngine, renderState_live);
 
 		if (addKeyframeIdx >= 0)

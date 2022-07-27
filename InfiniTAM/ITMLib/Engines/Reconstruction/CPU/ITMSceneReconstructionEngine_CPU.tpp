@@ -91,26 +91,31 @@ void ITMSceneReconstructionEngine_CPU<TVoxel, ITMVoxelBlockHash>::IntegrateIntoS
 		globalPos.y = currentHashEntry.pos.y;
 		globalPos.z = currentHashEntry.pos.z;
 		globalPos *= SDF_BLOCK_SIZE;
-
+///？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？
 		TVoxel *localVoxelBlock = &(localVBA[currentHashEntry.ptr * (SDF_BLOCK_SIZE3)]);
 
-		for (int z = 0; z < SDF_BLOCK_SIZE; z++) for (int y = 0; y < SDF_BLOCK_SIZE; y++) for (int x = 0; x < SDF_BLOCK_SIZE; x++)
-		{
-			Vector4f pt_model; int locId;
+//printf("============%d %d \n",TVoxel::hasColorInformation,TVoxel::hasConfidenceInformation);
 
-			locId = x + y * SDF_BLOCK_SIZE + z * SDF_BLOCK_SIZE * SDF_BLOCK_SIZE;
+		for (int z = 0; z < SDF_BLOCK_SIZE; z++)
+			for (int y = 0; y < SDF_BLOCK_SIZE; y++)
+				for (int x = 0; x < SDF_BLOCK_SIZE; x++)
+				{
+					Vector4f pt_model; int locId;
 
-			if (stopIntegratingAtMaxW) if (localVoxelBlock[locId].w_depth == maxW) continue;
-			//if (approximateIntegration) if (localVoxelBlock[locId].w_depth != 0) continue;
+					locId = x + y * SDF_BLOCK_SIZE + z * SDF_BLOCK_SIZE * SDF_BLOCK_SIZE;
 
-			pt_model.x = (float)(globalPos.x + x) * voxelSize;
-			pt_model.y = (float)(globalPos.y + y) * voxelSize;
-			pt_model.z = (float)(globalPos.z + z) * voxelSize;
-			pt_model.w = 1.0f;
+					if (stopIntegratingAtMaxW) if (localVoxelBlock[locId].w_depth == maxW) continue;
+					//if (approximateIntegration) if (localVoxelBlock[locId].w_depth != 0) continue;
 
-			ComputeUpdatedVoxelInfo<TVoxel::hasColorInformation,TVoxel::hasConfidenceInformation, TVoxel>::compute(localVoxelBlock[locId], pt_model, M_d, 
-				projParams_d, M_rgb, projParams_rgb, mu, maxW, depth, confidence, depthImgSize, rgb, rgbImgSize);
-		}
+					pt_model.x = (float)(globalPos.x + x) * voxelSize;
+					pt_model.y = (float)(globalPos.y + y) * voxelSize;
+					pt_model.z = (float)(globalPos.z + z) * voxelSize;
+					pt_model.w = 1.0f;
+
+					//false,false
+					ComputeUpdatedVoxelInfo<TVoxel::hasColorInformation,TVoxel::hasConfidenceInformation, TVoxel>::compute(localVoxelBlock[locId], pt_model, M_d,
+						projParams_d, M_rgb, projParams_rgb, mu, maxW, depth, confidence, depthImgSize, rgb, rgbImgSize);
+				}
 	}
 }
 

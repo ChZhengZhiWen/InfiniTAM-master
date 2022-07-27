@@ -105,7 +105,7 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_exDepth_Ab(THREADPTR(float) *A,
 //  确保投影的像素不越界
 	if (!((tmp2Dpoint.x >= 0.0f) && (tmp2Dpoint.x <= sceneImageSize.x - 2) && (tmp2Dpoint.y >= 0.0f) && (tmp2Dpoint.y <= sceneImageSize.y - 2)))
 		return false;
-//  双线性插值法，不太懂这是在干嘛？？？？？？？？？？？？？？？
+///  双线性插值法，不太懂这是在干嘛？？？？？？？？？？？？？？？
 	curr3Dpoint = interpolateBilinear_withHoles(pointsMap, tmp2Dpoint, sceneImageSize);
 	if (curr3Dpoint.w < 0.0f) return false;
 //  对应的模型点到当前深度点的向量，称为当前点的法向量
@@ -118,12 +118,12 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_exDepth_Ab(THREADPTR(float) *A,
 //  过滤掉异常深度的点
 	if (dist > tukeyCutOff * spaceThresh) return false;
 
-//  双线性插值法，不太懂这是在干嘛？？？？？？？？？？？？？？？
+///  双线性插值法，不太懂这是在干嘛？？？？？？？？？？？？？？？
 //  从原有模型中得到的点与法向量
 	corr3Dnormal = interpolateBilinear_withHoles(normalsMap, tmp2Dpoint, sceneImageSize);
 	//if (corr3Dnormal.w < 0.0f) return false;
 
-//depthWeight？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？
+///depthWeight？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？
 	depthWeight = MAX(0.0f, 1.0f - (depth - viewFrustum_min) / (viewFrustum_max - viewFrustum_min));
 	depthWeight *= depthWeight;
 

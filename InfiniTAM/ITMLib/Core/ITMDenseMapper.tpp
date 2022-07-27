@@ -40,6 +40,7 @@ void ITMDenseMapper<TVoxel,TIndex>::ProcessFrame(const ITMView *view, const ITMT
 
 	if (swappingEngine != NULL) {
 		// swapping: CPU -> GPU
+///        CPU时不使用交换
 		if (swappingMode == ITMLibSettings::SWAPPINGMODE_ENABLED) swappingEngine->IntegrateGlobalIntoLocal(scene, renderState);
 
 		// swapping: GPU -> CPU
