@@ -35,7 +35,7 @@ namespace InfiniTAM
 			std::vector<UIColourMode> colourModes_main, colourModes_freeview;
 			int currentColourMode;
 
-//          imageSource由ImageFileReader new出来
+//          imageSource由 ImageFileReader new出来 ImageSourceEngine.h
 			InputSource::ImageSourceEngine *imageSource;
 			InputSource::IMUSourceEngine *imuSource;
 			ITMLib::ITMLibSettings internalSettings;

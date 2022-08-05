@@ -7,6 +7,7 @@
 
 #include <stdexcept>
 #include <stdio.h>
+#include <iostream>
 
 using namespace InputSource;
 using namespace ITMLib;
@@ -99,6 +100,7 @@ void ImageFileReader<PathGenerator>::loadIntoCache(void) const
 	cacheIsValid = true;
 
 	std::string rgbPath = pathGenerator.getRgbImagePath(currentFrameNo);
+//std::cout<<rgbPath<<std::endl;
 	if (!ReadImageFromFile(cached_rgb, rgbPath.c_str()))
 	{
 		if (cached_rgb->noDims.x > 0) cacheIsValid = false;

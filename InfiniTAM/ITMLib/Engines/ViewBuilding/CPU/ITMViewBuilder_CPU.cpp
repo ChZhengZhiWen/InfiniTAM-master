@@ -12,7 +12,8 @@ ITMViewBuilder_CPU::ITMViewBuilder_CPU(const ITMRGBDCalib& calib):ITMViewBuilder
 ITMViewBuilder_CPU::~ITMViewBuilder_CPU(void) { }
 
 void ITMViewBuilder_CPU::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImage, ITMShortImage *rawDepthImage, bool useBilateralFilter, bool modelSensorNoise, bool storePreviousImage)
-{ 
+{
+///没有IMU就是这个
 	if (*view_ptr == NULL)
 	{
 		*view_ptr = new ITMView(calib, rgbImage->noDims, rawDepthImage->noDims, false);
@@ -100,8 +101,22 @@ void ITMViewBuilder_CPU::ConvertDisparityToDepth(ITMFloatImage *depth_out, const
 
 	float fx_depth = depthIntrinsics->projectionParamsSimple.fx;
 
-	for (int y = 0; y < imgSize.y; y++) for (int x = 0; x < imgSize.x; x++)
-		convertDisparityToDepth(d_out, x, y, d_in, disparityCalibParams, fx_depth, imgSize);
+//	for (int y = 0; y < imgSize.y; y++)
+//        for (int x = 0; x < imgSize.x; x++)
+//		    convertDisparityToDepth(d_out, x, y, d_in, disparityCalibParams, fx_depth, imgSize);
+//    for (int y = 0; y < imgSize.y; y++)
+//        for (int x = 0; x < imgSize.x; x++){
+//            int locId = x + y * imgSize.x;
+//            printf("%f  ",d_out[locId]);
+//        }
+
+    ///不使用视差图直接使用深度图
+    printf("不使用视差图直接使用深度图--ITMViewBuilder_CPU.cpp--108");
+    for (int y = 0; y < imgSize.y; y++)
+        for (int x = 0; x < imgSize.x; x++){
+            int locId = x + y * imgSize.x;
+            d_out[locId] = (d_in[locId] > 0) ? d_in[locId]/100.0 : -1.0f;
+        }
 }
 
 void ITMViewBuilder_CPU::ConvertDepthAffineToFloat(ITMFloatImage *depth_out, const ITMShortImage *depth_in, const Vector2f depthCalibParams)

@@ -1,7 +1,9 @@
 // Copyright 2014-2017 Oxford University Innovation Limited and the authors of InfiniTAM
 
 #include "FileUtils.h"
-
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <iostream>
 #include <stdio.h>
 #include <fstream>
 
@@ -255,6 +257,58 @@ static bool pnm_writedata(FILE *f, int xsize, int ysize, FormatType type, const 
 	return true;
 }
 
+static bool readByOpencv(cv::Mat image,unsigned char *data){
+    int i = 0;
+    for (size_t y = 0; y < image.rows; y++) {
+        // 用cv::Mat::ptr获得图像的行指针
+        unsigned char *row_ptr = image.ptr<unsigned char>(y);  // row_ptr是第y行的头指针
+        for (size_t x = 0; x < image.cols; x++) {
+            // 访问位于 x,y 处的像素
+            unsigned char *data_ptr = &row_ptr[x * image.channels()]; // data_ptr 指向待访问的像素数据
+            // 输出该像素的每个通道,如果是灰度图就只有一个通道
+            for (int c = image.channels()-1; c>=0; c--) {
+                unsigned char data_tem = data_ptr[c]; // data为I(x,y)第c个通道的值
+                data[i++] = data_tem;
+            }
+        }
+    }
+    return true;
+}
+
+static bool readByOpencv(cv::Mat image,short *data){
+    int i = 0;
+    memset(data,0,sizeof(short)*image.rows*image.cols);
+    for (size_t y = 0; y < image.rows; y++) {
+        // 用cv::Mat::ptr获得图像的行指针
+        unsigned char *row_ptr = image.ptr<unsigned char>(y);  // row_ptr是第y行的头指针
+        for (size_t x = 0; x < image.cols; x++) {
+            // 访问位于 x,y 处的像素
+            unsigned char *data_ptr = &row_ptr[x * image.channels()]; // data_ptr 指向待访问的像素数据
+            memcpy(&data[i++],data_ptr,sizeof(unsigned char));
+        }
+    }
+
+    return true;
+}
+
+static bool readByOpencvHead(cv::Mat &image,const char* fileName,int *xsize, int *ysize){
+//    cv::Mat image;
+    image = cv::imread(fileName);
+
+    // 判断图像文件是否正确读取
+    if (image.data == nullptr) { //数据不存在,可能是文件不存在
+        cerr << "文件" << fileName << "不存在." << endl;
+        return false;
+    }
+
+    // 文件顺利读取, 首先输出一些基本信息
+//    cout << "图像宽为" << image.cols << ",高为" << image.rows << ",通道数为" << image.channels() << endl;
+
+    if (xsize) *xsize = image.cols;
+    if (ysize) *ysize = image.rows;
+    return true;
+}
+
 void SaveImageToFile(const ORUtils::Image<ORUtils::Vector4<unsigned char> > * image, const char* fileName, bool flipVertical)
 {
 	FILE *f = fopen(fileName, "wb");
@@ -327,7 +381,7 @@ void SaveImageToFile(const ORUtils::Image<float>* image, const char* fileName)
 
 	delete[] data;
 }
-
+///Image<ORUtils::Vector4<unsigned char> >是PPM rgb
 bool ReadImageFromFile(ORUtils::Image<ORUtils::Vector4<unsigned char> > * image, const char* fileName)
 {
 	PNGReaderData pngData;
@@ -339,16 +393,25 @@ bool ReadImageFromFile(ORUtils::Image<ORUtils::Vector4<unsigned char> > * image,
 	FILE *f = fopen(fileName, "rb");
 	if (f == NULL) return false;
 	type = pnm_readheader(f, &xsize, &ysize, &binary);
-	if ((type != RGB_8u)&&(type != RGBA_8u)) {
-		fclose(f);
-		f = fopen(fileName, "rb");
-		type = png_readheader(f, xsize, ysize, pngData);
-		if ((type != RGB_8u)&&(type != RGBA_8u)) {
-			fclose(f);
-			return false;
-		}
-		usepng = true;
-	}
+//  原本代码
+//	if ((type != RGB_8u)&&(type != RGBA_8u)) {
+//		fclose(f);
+//		f = fopen(fileName, "rb");
+//		type = png_readheader(f, xsize, ysize, pngData);
+//		if ((type != RGB_8u)&&(type != RGBA_8u)) {
+//			fclose(f);
+//			return false;
+//		}
+//		usepng = true;
+//	}
+
+///  自定义使用opencv读取png
+    cv::Mat RGB_image;
+    if ((type != RGB_8u)&&(type != RGBA_8u)){
+        if(!readByOpencvHead(RGB_image,fileName,&xsize, &ysize))
+            return false;
+        usepng = true;
+    }
 
 	ORUtils::Vector2<int> newSize(xsize, ysize);
 	image->ChangeDims(newSize);
@@ -359,7 +422,9 @@ bool ReadImageFromFile(ORUtils::Image<ORUtils::Vector4<unsigned char> > * image,
 	else data = (unsigned char*)image->GetData(MEMORYDEVICE_CPU);
 
 	if (usepng) {
-		if (!png_readdata(f, xsize, ysize, pngData, data)) { fclose(f); delete[] data; return false; }
+//		if (!png_readdata(f, xsize, ysize, pngData, data)) { fclose(f); delete[] data; return false; }
+///     自定义使用opencv读取png
+        if(!readByOpencv(RGB_image,data)){ fclose(f); delete[] data; return false; }
 	} else if (binary) {
 		if (!pnm_readdata_binary(f, xsize, ysize, RGB_8u, data)) { fclose(f); delete[] data; return false; }
 	} else {
@@ -374,13 +439,12 @@ bool ReadImageFromFile(ORUtils::Image<ORUtils::Vector4<unsigned char> > * image,
 			dataPtr[i].x = data[i * 3 + 0]; dataPtr[i].y = data[i * 3 + 1];
 			dataPtr[i].z = data[i * 3 + 2]; dataPtr[i].w = 255;
 		}
-
 		delete[] data;
 	}
 
 	return true;
 }
-
+///Image<short>是PGM
 bool ReadImageFromFile(ORUtils::Image<short> *image, const char *fileName)
 {
 	PNGReaderData pngData;
@@ -391,21 +455,30 @@ bool ReadImageFromFile(ORUtils::Image<short> *image, const char *fileName)
 	FILE *f = fopen(fileName, "rb");
 	if (f == NULL) return false;
 	FormatType type = pnm_readheader(f, &xsize, &ysize, &binary);
-	if ((type != MONO_16s) && (type != MONO_16u)) {
-		fclose(f);
-		f = fopen(fileName, "rb");
-		type = png_readheader(f, xsize, ysize, pngData);
-		if ((type != MONO_16s) && (type != MONO_16u)) {
-			fclose(f);
-			return false;
-		}
-		usepng = true;
-		binary = true;
-	}
+//	if ((type != MONO_16s) && (type != MONO_16u)) {
+//		fclose(f);
+//		f = fopen(fileName, "rb");
+//		type = png_readheader(f, xsize, ysize, pngData);
+//		if ((type != MONO_16s) && (type != MONO_16u)) {
+//			fclose(f);
+//			return false;
+//		}
+//		usepng = true;
+//		binary = true;
+//	}
+
+    ///  自定义使用opencv读取png
+    cv::Mat depth_image;
+    if ((type != MONO_16s) && (type != MONO_16u)){
+        readByOpencvHead(depth_image,fileName,&xsize, &ysize);
+        usepng = true;
+    }
 
 	short *data = new short[xsize*ysize];
 	if (usepng) {
-		if (!png_readdata(f, xsize, ysize, pngData, data)) { fclose(f); delete[] data; return false; }
+//		if (!png_readdata(f, xsize, ysize, pngData, data)) { fclose(f); delete[] data; return false; }
+        ///     自定义使用opencv读取png
+        if(!readByOpencv(depth_image,data)){ fclose(f); delete[] data; return false; }
 	} else if (binary) {
 		if (!pnm_readdata_binary(f, xsize, ysize, type, data)) { fclose(f); delete[] data; return false; }
 	} else {
@@ -415,16 +488,22 @@ bool ReadImageFromFile(ORUtils::Image<short> *image, const char *fileName)
 
 	ORUtils::Vector2<int> newSize(xsize, ysize);
 	image->ChangeDims(newSize);
-	if (binary) {
+
+    if (binary) {
 		for (int i = 0; i < image->noDims.x*image->noDims.y; ++i) {
+           /// 由于大小端存储问题data和实际数据16禁止顺序是反的  这里是在交换顺序
 			image->GetData(MEMORYDEVICE_CPU)[i] = (data[i] << 8) | ((data[i] >> 8) & 255);
+//printf("%d ",image->GetData(MEMORYDEVICE_CPU)[i]);
 		}
 	} else {
 		for (int i = 0; i < image->noDims.x*image->noDims.y; ++i) {
 			image->GetData(MEMORYDEVICE_CPU)[i] = data[i];
 		}
 	}
-	delete[] data;
+///printf("============%x\n",data[23] );由于大小端存储问题data和实际数据16禁止顺序是反的
+///printf("============%x\n",data[24] );
+///printf("============%x\n",image->GetData(MEMORYDEVICE_CPU)[24] );
+    delete[] data;
 
 	return true;
 }
